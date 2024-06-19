@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Experiencia Paciente",
+  "version": "1.0",
+  "description": "Compartir datos de la consulta con el paciente",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "background": {
+    "service_worker": "js/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["js/content.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "panel.html",
+    "default_icon": {
+      "16": "img/ep-logo.png",
+      "48": "img/ep-logo.png",
+      "128": "img/ep-logo.png"
+    }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; script-src-elem https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js 'self'",
+    "sandbox": "sandbox allow-scripts allow-forms",
+    "web_accessible_resources": [
+      "script.js"
+    ]
+  }
+}
