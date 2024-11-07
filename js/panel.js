@@ -56,7 +56,6 @@ shareBtn.addEventListener('click', () => {
 
 // shareBtn.onclick = shareData();
 
-
 const boton = document.getElementById("resetData");
 const mensaje = document.querySelector('div.panel__container')
 
