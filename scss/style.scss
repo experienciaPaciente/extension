@@ -2,8 +2,22 @@
     font-family: sans-serif;
 
     --primary: #375B9F;
-    --secondary: #00EEFF;
-    --tertiary: #F993C4;
+    --secondary: #C7E2FF;
+    --secondary--dark: #6CBCFC;
+    --tertiary: #F5C451;
+    --neutral: #8189B0;
+
+    --info: #6CBCFC;
+    --info--light: #EFF7FF;
+    --warning--dark: #ff8c00;
+    --warning: #ff9a00;
+    --warning--light: #FCEBD0;
+    --success: #23D3BD;
+    --success--light: #c9f5ef;
+    --success--dark: #18b09f;
+    --danger--dark: #b82e76;
+    --danger: #ef5da8;
+    --danger--light: #FAE5E4;
 
     --badge__bg: transparent;
     --badge__color: inherit;
@@ -114,6 +128,14 @@ footer {
     }
 
     // Badge
+    #badgeHolder {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        width: fit-content;
+    }
+
+
     %baseBadge {
         padding: .5rem .75rem;
         color: #27AE60;
@@ -169,7 +191,7 @@ footer {
 
     [class^='panel__btn'] {
         &:hover {
-            filter: brightness(50%);
+            filter: brightness(90%);
             cursor: pointer;
         }
     }
@@ -195,15 +217,38 @@ footer {
         --button__bg: transparent;
         @extend %baseButton;
         }
+
+    // Severity
+    &--success {
+        --button__color: inherit;
+        --button__bg: var(--success--dark);
+        @extend %baseButton;
+        }
+
+    &--warning {
+        --button__color: var(--warning);
+        --button__bg: var(--secondary);
+        @extend %baseButton;   
+        }
+
+    &--danger {
+        --button__color: var(--danger);
+        --button__bg: transparent;
+        @extend %baseButton;
+        }
     }
 
     // Sizes
     $sizes: 'sm', 'md', 'lg';
-    $fontSizes: .35rem, .5rem, .65rem;
+    $fontSizes: 16px, 24px, 36px;
 
-    @each $size in $sizes {
-        button[type=#{$size}] {
-            font-size: $fontSizes;
+    $sizes: 'sm', 'md', 'lg';
+    $fontSizes: 24px, 36px, 48px;
+    
+    @each $size, $fontSize in zip($sizes, $fontSizes) {
+        button[size=#{$size}] {
+            height: $fontSize;
+            width: $fontSize;
         }
     }
 
@@ -213,8 +258,12 @@ footer {
         margin: 0;
     }
 
-    // Inputs
+    // Icons
+    .panel__icon {
 
+    }
+
+    // Inputs
     .input__wrapper {
         display: flex;
         flex-direction: row;
@@ -254,7 +303,7 @@ footer {
                 width: 26px;
                 left: 4px;
                 bottom: 4px;
-                background-color: white;
+                background-color: var(--primary);
                 -webkit-transition: .4s;
                 transition: .4s;
                 border-radius: 50%;
@@ -262,7 +311,7 @@ footer {
             }
                    
             &:checked + .slider {
-                background-color: var(--primary);
+                background-color: var(--secondary);
                 
                 &.round {
                     border-radius: 34px;
@@ -303,5 +352,3 @@ footer {
         }
     }
 }
-
-

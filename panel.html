@@ -9,10 +9,10 @@
   <header>
     <img src="./img/ep__marca--row.svg" alt="">
     <span id="badgeHolder">
-
-      <small class="panel__btn--tertiary">
-        <i class="fa-regular fa-copy"></i>
-      </small>
+      <span class="panel__badge--success">Activa</span>
+      <button class="panel__btn--tertiary">
+        <img src="./img/icon__copy--secondary.svg" alt="">
+      </button>
     </span>
   </header>
   <div class="panel__container">
@@ -32,14 +32,23 @@
     </span>
   </div>
   <footer class="panel__flex--between">
-    <button id="resetData" class="panel__btn--secondary">Reset</button>
-    <button class="panel__btn--tertiary">
-      <a id="downloadData" download="formData.json">Descargar información</a>
-    </button> 
-    <button id="shareData" class="panel__btn--primary" [disabled]="formData">Compartir info</button>
+    <section class="input__wrapper">
+      <button id="resetData" class="panel__btn--danger">Finalizar registro</button>
+      <button class="panel__btn--tertiary">
+        <!-- <a id="downloadData" download="formData.json">Descargar registro</a> -->
+        <a id="downloadData" download="formData.json">
+          <img src="./img/icon__download--primary.svg" alt="">
+        </a>
+      </button> 
+      <button size="sm" id="shareData" class="panel__btn--tertiary" [disabled]="formData">
+        <a href="">
+          <img src="./img/icon__share--primary.svg" alt="" height="12">
+        </a>
+      </button>
+    </section>
+    <a href="https://experienciapaciente.github.io/portal-paciente/">Registrar en experienciaPaciente.org</a>
   </footer>
   <!-- <a id="shareData" href="" target="_blank">Listado</a> -->
-
   <script src="lib/qrcode.min.js"></script>
   <script src="js/panel.js"></script>
 </body>
