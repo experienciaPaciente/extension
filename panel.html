@@ -4,51 +4,94 @@
   <title>Experiencia Paciente</title>
   <link rel="stylesheet" href="./style.css">
   <link rel="stylesheet" href="path/to/font-awesome/css/font-awesome.min.css">
+  <meta charset="UTF-8">
 </head>
 <body class="panel">
-  <header>
-    <img src="./img/ep__marca--row.svg" alt="">
-    <span id="badgeHolder">
-      <span class="panel__badge--success">Activa</span>
-      <button class="panel__btn--tertiary">
-        <img src="./img/icon__copy--secondary.svg" alt="">
-      </button>
-    </span>
-  </header>
-  <div class="panel__container">
-    <span class="panel__container--left">
-      <div id="qrcode"></div>
-      <div class="input__wrapper">
-        <label class="switch">
-          <input type="checkbox" checked>
-          <span class="slider round"></span>
-        </label>
-        <p>Validado por el equipo de salud</p>
-      </div>
-    </span>
-    <span class="panel__container--right">
-      <h3 class="panel__title">Registros de la consulta</h3>
-      <section id="outputContainer"></section>
-    </span>
-  </div>
-  <footer class="panel__flex--between">
-    <section class="input__wrapper">
-      <button id="resetData" class="panel__btn--danger">Finalizar registro</button>
-      <button class="panel__btn--tertiary">
-        <!-- <a id="downloadData" download="formData.json">Descargar registro</a> -->
-        <a id="downloadData" download="formData.json">
-          <img src="./img/icon__download--primary.svg" alt="">
-        </a>
-      </button> 
-      <button size="sm" id="shareData" class="panel__btn--tertiary" [disabled]="formData">
-        <a href="">
-          <img src="./img/icon__share--primary.svg" alt="" height="12">
-        </a>
-      </button>
+  <div id="form">
+    <header>
+      <img src="./img/ep__marca--row.svg" alt="" width="215" height="95">
+      <span id="badgeHolder">
+        <span id="successMsg" class="panel__badge--success">Registrado exitosamente</span>
+        <span id="errorMsg" class="panel__badge--danger">Error al registrar</span>
+      </span>
+    </header>
+    <section class="panel__container">
+      <span class="panel__container--left">
+        <div id="qrcode"></div>
+        <div class="input__wrapper">
+          <label class="switch">
+            <input type="checkbox" checked>
+            <span class="slider round"></span>
+          </label>
+          <p>Validado por el equipo de salud</p>
+        </div>
+      </span>
+      <span class="panel__container--right">
+        <div class="panel__container--row">
+          <h3 class="panel__title">Registros de la consulta</h3>
+          <button class="panel__btn--link">
+            <img src="./img/icon__copy--secondary.svg" alt="">
+          </button>
+        </div>
+        <div id="outputContainer">
+        </div>
+      </span>
     </section>
-    <a href="https://experienciapaciente.github.io/portal-paciente/">Registrar en experienciaPaciente.org</a>
-  </footer>
-  <!-- <a id="shareData" href="" target="_blank">Listado</a> -->
+    <footer class="panel__flex--between">
+      <section class="input__wrapper">
+        <button id="resetData" class="panel__btn--danger">Finalizar registro</button>
+        <button class="panel__btn--tertiary">
+          <!-- <a id="downloadData" download="formData.json">Descargar registro</a> -->
+          <a id="downloadData" download="formData.json">
+            <img src="./img/icon__download--primary.svg" alt="" height="16">
+          </a>
+        </button> 
+        <button id="shareData" class="panel__btn--tertiary" [disabled]="formData">
+          <a href="">
+            <img src="./img/icon__share--primary.svg" alt="" height="12">
+          </a>
+        </button>
+      </section>
+      <a href="https://experienciapaciente.org/portal/" class="panel__btn--link">Ir a experienciaPaciente.org</a>
+    </footer>
+  </div>
+
+  <div id="home" class="panel__container--col">
+    <img src="./img/ep__marca--col.svg" alt="">
+    <p class="">Iniciativa no gubernamental y sin fines de lucro que promueve la democratización del acceso a los datos de salud a través de herramientas digitales.</p>
+    
+    <section class="stepper__wrapper--row">
+      <div class="step__wrapper--col">
+        <img src="./img/icon_step-1.png" alt="" height="48">
+        <h3 class="step__title">Paso 1: Registrá</h3>
+        <small class="step__text">Completa la información de la consulta en el sistema que utilizas siempre.</small>
+      </div>
+      <div class="step__wrapper--col">
+        <img class="step__icon"  src="./img/icon_step-2.png" alt="" height="48">
+        <h3 class="step__title">Paso 2: Guardá</h3>
+        <small class="step__text">Una vez que guardes el registro, abre la extensión de Chrome y presiona 'Ver registro'.</small>
+      </div>
+      <div class="step__wrapper--col">
+        <img src="./img/icon_step-3.png" alt="" height="48">
+        <h3 class="step__title">Paso 3: Compartí</h3>
+        <small class="step__text">Muestra el código QR al paciente para que pueda escanearlo y llevarse sus datos de salud.</small>
+      </div>
+
+    </section>
+    
+    <section class="input__wrapper">
+      <button id="exitBtn" class="panel__btn--danger">
+        <img src="./img/icon__exit--danger.svg" alt="" height="12">
+        <span>Salir</span>
+      </button>
+      <button id="navForm" class="panel__btn--primary" disabled>
+        <img src="./img/icon__pencil--white.svg" alt="" height="16">
+        <span>Ver registro</span>
+      </button> 
+    </section>
+    <a href="https://experienciapaciente.org/portal-paciente/" class="panel__btn--link">Ir al portal experienciaPaciente.org</a>
+    <!-- <a id="shareData" href="" target="_blank">Listado</a> -->
+  </div>
   <script src="lib/qrcode.min.js"></script>
   <script src="js/panel.js"></script>
 </body>

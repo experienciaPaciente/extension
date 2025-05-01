@@ -1,5 +1,5 @@
 function generateqr() {
-    var name = document-getElementById (' name').value;
+    var name = document-getElementById ('name').value;
     var email = document -getElementById('email').value;
     var subject = document-getElementById('subject') .value;
     var message = document-getElementById( 'message'). value;
@@ -10,30 +10,6 @@ function generateqr() {
 }
 
 document.getElementById('qrcode').innerHTML = ifr;
-
-// document.addEventListener('DOMContentLoaded', () => {
-//   chrome.storage.local.get('savedFormData', (result) => {
-//     const formData = result.savedFormData;
-
-//     if (formData) {
-//       const dataContainer = document.getElementById('dataContainer');
-//       dataContainer.textContent = `Saved Data: ${JSON.stringify(formData)}`;
-
-//       const url = 'http://localhost:4200/';
-//       generateQRCode(url);
-
-//       // Prepare download link
-//       const downloadLink = document.getElementById('download');
-//       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(formData));
-//       downloadLink.setAttribute("href", dataStr);
-//       downloadLink.style.display = "block";
-//     } else {
-//       const dataContainer = document.getElementById('dataContainer');
-//       dataContainer.textContent = 'No data saved.';
-//       document.getElementById('download').style.display = 'none';
-//     }
-//   });
-// });
 
 // Add the formData to Firestore
 const pushBtn = document.getElementById('shareData');
