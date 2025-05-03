@@ -24,12 +24,5 @@
       "48": "img/ep-logo.png",
       "128": "img/ep-logo.png"
     }
-  },
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; script-src-elem https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js 'self'",
-    "sandbox": "sandbox allow-scripts allow-forms",
-    "web_accessible_resources": [
-      "script.js"
-    ]
   }
 }

@@ -215,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
         navigator.clipboard.writeText(dataStr)
           .then(() => {
             const originalImg = copyBtn.querySelector('img').src;
-            copyBtn.innerHTML = `<span style="color: #4CAF50; font-size: 12px;">✓ Copiado</span>`;
+            copyBtn.innerHTML = `<span class="panel__badge--success">Copiado</span>`;
             
             setTimeout(() => {
               copyBtn.innerHTML = `<img class="icon__wrapper" src="${originalImg}" alt="">`;
