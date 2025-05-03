@@ -1,53 +1,105 @@
+// @ts-nocheck
 document.addEventListener('DOMContentLoaded', () => {
-  // Get element references
   const boton = document.getElementById("resetData");
-  const mensaje = document.querySelector('div.panel__container');
   const homeBtn = document.getElementById('navForm');
-  const shareBtn = document.getElementById('shareData');
   const exitBtn = document.getElementById('exitBtn');
+  let countdownInterval = null;
+  let timeLeft = 120;
   
-  // Set initial visibility
-  document.getElementById('home').style.display = 'flex';
-  document.getElementById('form').style.display = 'none';
+  const countdownElement = document.createElement('div');
+  countdownElement.id = 'countdown';
+  countdownElement.classList.add('panel__countdown');
+  countdownElement.style.display = 'none';
   
-  // Hide messages initially
-  if (document.getElementById('successMsg')) {
-    document.getElementById('successMsg').style.display = 'none';
+  const timerElement = document.getElementById('timer');
+  if (timerElement) {
+    timerElement.appendChild(countdownElement);
   }
-  if (document.getElementById('errorMsg')) {
-    document.getElementById('errorMsg').style.display = 'none';
+  
+  const homeElement = document.getElementById('home');
+  const formElement = document.getElementById('form');
+  
+  if (homeElement) {
+    homeElement.style.display = 'flex';
+  }
+  
+  if (formElement) {
+    formElement.style.display = 'none';
+  }
+  
+  const successMsg = document.getElementById('successMsg');
+  const errorMsg = document.getElementById('errorMsg');
+  
+  if (successMsg) {
+    successMsg.style.display = 'none';
+  }
+  
+  if (errorMsg) {
+    errorMsg.style.display = 'none';
   }
 
-  // Load saved data
+  function startCountdown() {
+    if (countdownInterval) {
+      clearInterval(countdownInterval);
+    }
+    
+    timeLeft = 60;
+    countdownElement.style.display = 'block';
+    updateCountdownDisplay();
+    
+    countdownInterval = setInterval(() => {
+      timeLeft--;
+      updateCountdownDisplay();
+      
+      if (timeLeft <= 0) {
+        if (countdownInterval) {
+          clearInterval(countdownInterval);
+        }        
+        chrome.storage.local.clear();
+        window.close();
+      }
+    }, 1000);
+  }
+  
+  function updateCountdownDisplay() {
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
+    countdownElement.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    
+    if (timeLeft <= 30) {
+      countdownElement.style.color = '#ff8c00';
+    } else {
+      countdownElement.style.color = '';
+    }
+  }
+
   chrome.storage.local.get('savedFormData', (result) => {
     const formData = result.savedFormData;
-
-    if (formData) {
-      const savedData = JSON.stringify(formData);
-      const parsedData = JSON.parse(savedData);
-      const output = document.getElementById('outputContainer');
-      
-      // Clear existing content
+    const output = document.getElementById('outputContainer');
+    
+    if (formData && output) {
       output.innerHTML = '';
       
-      for (const key in parsedData) {
+      for (const key in formData) {
         const label = document.createElement('label');
         label.textContent = key;
         const paragraph = document.createElement('p');
-        paragraph.textContent = parsedData[key];
+        paragraph.textContent = formData[key];
         output.appendChild(label);
         output.appendChild(paragraph);
       }
 
+      const savedData = JSON.stringify(formData);
       const url = 'https://chart.googleapis.com/chart?cht=qr&chs=120x120&chl=' + encodeURIComponent(savedData);
       generateQRCode(url);
       
-      if (document.getElementById('successMsg')) {
-        document.getElementById('successMsg').style.display = 'flex';
+      if (successMsg) {
+        successMsg.style.display = 'flex';
       }
 
-      const navFormBtn = document.getElementById('navForm');
-      navFormBtn.removeAttribute('disabled');
+      if (homeBtn) {
+        homeBtn.removeAttribute('disabled');
+      }
       
     } else {
       const dataContainer = document.getElementById('dataContainer');
@@ -60,8 +112,8 @@ document.addEventListener('DOMContentLoaded', () => {
         downloadBtn.style.display = 'none';
       }
       
-      if (document.getElementById('errorMsg')) {
-        document.getElementById('errorMsg').style.display = 'flex';
+      if (errorMsg) {
+        errorMsg.style.display = 'flex';
       }
     }
   });
@@ -69,33 +121,162 @@ document.addEventListener('DOMContentLoaded', () => {
   // Event listeners
   if (boton) {
     boton.addEventListener('click', () => {
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownElement.style.display = 'none';
+      }
       chrome.storage.local.clear();
-      document.getElementById('home').style.display = 'flex';
-      document.getElementById('form').style.display = 'none';
-      alert("Registro eliminado");
+      window.close();
     });
   }
 
   if (homeBtn) {
     homeBtn.addEventListener('click', () => {
-      document.getElementById('form').style.display = 'flex';
-      document.getElementById('home').style.display = 'none';
+      if (formElement && homeElement) {
+        formElement.style.display = 'flex';
+        homeElement.style.display = 'none';
+        startCountdown();
+      }
     });
   }
   
   if (exitBtn) {
-    document.getElementById('exitBtn').addEventListener('click', () => {
+    exitBtn.addEventListener('click', () => {
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+      }
       chrome.storage.local.clear();
       window.close();
     });    
   }
+  
+  const downloadData = document.getElementById('downloadData');
+  if (downloadData) {
+    downloadData.addEventListener('click', (e) => {
+      e.preventDefault();
+      
+      chrome.storage.local.get('savedFormData', (result) => {
+        if (!result.savedFormData) {
+          alert('No hay datos para descargar');
+          return;
+        }
 
-  if (shareBtn) {
-    shareBtn.addEventListener('click', () => {
-      var message = "Este es el registro de tu consulta";
-      var url = "http://www.experienciapaciente.org";
-      var whatsappUrl = "https://wa.me/?text=" + encodeURIComponent(message + " " + url);
-      window.open(whatsappUrl, "_blank");
+        const now = new Date();
+        const dateStr = now.toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, 19);
+        const filename = `Tu-Salud-${dateStr}.txt`;
+        
+        const enrichedData = {
+          timestamp: now.toISOString(),
+          exportDate: dateStr,
+          data: result.savedFormData
+        };
+        
+        const dataStr = JSON.stringify(enrichedData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'text/plain' });
+        const url = URL.createObjectURL(dataBlob);
+        
+        downloadData.href = url;
+        downloadData.setAttribute('download', filename);
+
+        const tempLink = document.createElement('a');
+        tempLink.href = url;
+        tempLink.download = filename;
+        document.body.appendChild(tempLink);
+        tempLink.click();
+        document.body.removeChild(tempLink);
+          
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+        }, 100);
+      });
+    });
+  }
+    
+  const copyBtn = document.getElementById('copyData');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      chrome.storage.local.get('savedFormData', (result) => {
+        if (!result.savedFormData) {
+          alert('No hay datos para copiar');
+          return;
+        }
+        
+        const now = new Date();
+        const dateStr = now.toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, 19);
+        
+        const enrichedData = {
+          timestamp: now.toISOString(),
+          exportDate: dateStr,
+          data: result.savedFormData
+        };
+        
+        const dataStr = JSON.stringify(enrichedData, null, 2);
+        
+        navigator.clipboard.writeText(dataStr)
+          .then(() => {
+            const originalImg = copyBtn.querySelector('img').src;
+            copyBtn.innerHTML = `<span style="color: #4CAF50; font-size: 12px;">✓ Copiado</span>`;
+            
+            setTimeout(() => {
+              copyBtn.innerHTML = `<img class="icon__wrapper" src="${originalImg}" alt="">`;
+            }, 2000);
+          })
+          .catch(err => {
+            console.error('Error al copiar: ', err);
+            alert('Error al copiar los datos');
+          });
+      });
+    });
+  }
+
+  if (formElement && formElement.style.display === 'flex') {
+    startCountdown();
+  }
+  
+  const attachButton = document.getElementById('attachProfessionalData');
+  if (attachButton) {
+    attachButton.addEventListener('click', () => {
+      const dniProfesional = document.getElementById('dniProfesional');
+      const nombreInstitucion = document.getElementById('nombreInstitucion');
+      
+      if (!dniProfesional || !nombreInstitucion) return;
+      
+      if (!dniProfesional.value) {
+        alert('Por favor ingrese un DNI válido');
+        dniProfesional.focus();
+        return;
+      }
+      
+      if (!nombreInstitucion.value) {
+        alert('Por favor ingrese el nombre de la institución');
+        nombreInstitucion.focus();
+        return;
+      }
+      
+      chrome.storage.local.get('savedFormData', (result) => {
+        let formData = result.savedFormData || {};
+        
+        formData['DNI del profesional'] = dniProfesional.value;
+        formData['Nombre de la Institución'] = nombreInstitucion.value;
+        formData['Validado'] = 'Sí';
+        
+        chrome.storage.local.set({ 'savedFormData': formData }, () => {
+          alert('Datos profesionales adjuntados correctamente');
+          updateDisplayedData(formData);
+        });
+      });
+    });
+  }
+  
+  // Validation toggle
+  const validationToggle = document.getElementById('validationToggle');
+  const professionalFields = document.getElementById('professionalFields');
+
+  if (validationToggle && professionalFields) {
+    professionalFields.style.display = validationToggle.checked ? 'block' : 'none';
+    
+    validationToggle.addEventListener('change', function() {
+      professionalFields.style.display = this.checked ? 'block' : 'none';
     });
   }
 });
@@ -103,13 +284,41 @@ document.addEventListener('DOMContentLoaded', () => {
 function generateQRCode(url) {
   const qrcodeElement = document.getElementById('qrcode');
   if (qrcodeElement) {
-    // Clear previous QR code if any
     qrcodeElement.innerHTML = '';
     
-    new QRCode(qrcodeElement, {
-      text: url,
-      width: 150,
-      height: 150
-    });
+    if (typeof QRCode === 'function') {
+      new QRCode(qrcodeElement, {
+        text: url,
+        width: 150,
+        height: 150
+      });
+    } else {
+      console.error('QRCode library not loaded');
+    }
+  }
+}
+
+function updateDisplayedData(formData) {
+  const output = document.getElementById('outputContainer');
+  if (output) {
+    output.innerHTML = '';
+    
+    for (const key in formData) {
+      const label = document.createElement('label');
+      label.textContent = key;
+      const paragraph = document.createElement('p');
+      paragraph.textContent = formData[key];
+      output.appendChild(label);
+      output.appendChild(paragraph);
+    }
+    
+    const savedData = JSON.stringify(formData);
+    const url = 'https://chart.googleapis.com/chart?cht=qr&chs=120x120&chl=' + encodeURIComponent(savedData);
+    generateQRCode(url);
+    
+    const successMsg = document.getElementById('successMsg');
+    if (successMsg) {
+      successMsg.style.display = 'flex';
+    }
   }
 }
