@@ -112,9 +112,6 @@ footer {
   padding: var(--header__padding);
   background-color: var(--panel__bg);
   box-sizing: border-box;
-  position: fixed;
-  bottom: 0;
-  left: 0;
 }
 
 .panel {
