@@ -5,8 +5,7 @@
   "description": "Compartir datos de la consulta con el paciente",
   "permissions": [
     "activeTab",
-    "storage",
-    "scripting"
+    "storage"
   ],
   "background": {
     "service_worker": "js/background.js"
