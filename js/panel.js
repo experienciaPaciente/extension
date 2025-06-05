@@ -90,8 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const savedData = JSON.stringify(formData);
-      const url = 'https://chart.googleapis.com/chart?cht=qr&chs=120x120&chl=' + encodeURIComponent(savedData);
-      generateQRCode(url);
+      generateQRCode(savedData);
       
       if (successMsg) {
         successMsg.style.display = 'flex';
@@ -149,50 +148,80 @@ document.addEventListener('DOMContentLoaded', () => {
       window.close();
     });    
   }
-  
   const downloadData = document.getElementById('downloadData');
-  if (downloadData) {
-    downloadData.addEventListener('click', (e) => {
-      e.preventDefault();
-      
-      chrome.storage.local.get('savedFormData', (result) => {
-        if (!result.savedFormData) {
-          alert('No hay datos para descargar');
-          return;
-        }
-
-        const now = new Date();
-        const dateStr = now.toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, 19);
-        const filename = `Tu-Salud-${dateStr}.txt`;
-        
-        const enrichedData = {
-          timestamp: now.toISOString(),
-          exportDate: dateStr,
-          data: result.savedFormData
-        };
-        
-        const dataStr = JSON.stringify(enrichedData, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'text/plain' });
-        const url = URL.createObjectURL(dataBlob);
-        
-        downloadData.href = url;
-        downloadData.setAttribute('download', filename);
-
-        const tempLink = document.createElement('a');
-        tempLink.href = url;
-        tempLink.download = filename;
-        document.body.appendChild(tempLink);
-        tempLink.click();
-        document.body.removeChild(tempLink);
-          
-        setTimeout(() => {
-          URL.revokeObjectURL(url);
-        }, 100);
-      });
-    });
-  }
+if (downloadData) {
+  downloadData.addEventListener('click', (e) => {
+    e.preventDefault();
     
-  const copyBtn = document.getElementById('copyData');
+    chrome.storage.local.get('savedFormData', (result) => {
+      if (!result.savedFormData) {
+        alert('No hay datos para descargar');
+        return;
+      }
+
+      const now = new Date();
+      const dateStr = now.toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, 19);
+      const filename = `Tus-Datos-de-Salud-${dateStr}.txt`;
+      
+      // Convert data to user-friendly format
+      const formatData = (data, level = 0) => {
+        const indent = '  '.repeat(level);
+        let output = '';
+        
+        if (typeof data === 'object' && data !== null) {
+          if (Array.isArray(data)) {
+            data.forEach((item, index) => {
+              output += `${indent}${index + 1}. ${formatData(item, level + 1)}\n`;
+            });
+          } else {
+            Object.entries(data).forEach(([key, value]) => {
+              const friendlyKey = key
+                .replace(/([A-Z])/g, ' $1')
+                .replace(/^./, str => str.toUpperCase())
+                .replace(/_/g, ' ');
+              
+              if (typeof value === 'object' && value !== null) {
+                output += `${indent}${friendlyKey}:\n`;
+                output += formatData(value, level + 1);
+              } else {
+                output += `${indent}${friendlyKey}: ${value || 'No especificado'}\n`;
+              }
+            });
+          }
+        } else {
+          output += `${data || 'No especificado'}`;
+        }
+        
+        return output;
+      };
+      
+      // Create readable content
+      let content = `TUS DATOS DE SALUD - ${now.toLocaleString('es-ES')}\n\n`;
+      content += `REGISTROS:\n`;
+      content += `${formatData(result.savedFormData)}\n\n`;
+      content += `www.experienciaPaciente.org - Tu salud, fuera del círculo\n`;
+      
+      const dataBlob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(dataBlob);
+      
+      downloadData.href = url;
+      downloadData.setAttribute('download', filename);
+
+      const tempLink = document.createElement('a');
+      tempLink.href = url;
+      tempLink.download = filename;
+      document.body.appendChild(tempLink);
+      tempLink.click();
+      document.body.removeChild(tempLink);
+        
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 100);
+    });
+  });
+}
+    
+const copyBtn = document.getElementById('copyData');
   if (copyBtn) {
     copyBtn.addEventListener('click', () => {
       chrome.storage.local.get('savedFormData', (result) => {
@@ -202,17 +231,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         const now = new Date();
-        const dateStr = now.toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, 19);
+        const formattedDate = now.toLocaleDateString('es-AR') + ' ' + now.toLocaleTimeString('es-AR');
         
-        const enrichedData = {
-          timestamp: now.toISOString(),
-          exportDate: dateStr,
-          data: result.savedFormData
-        };
-        
-        const dataStr = JSON.stringify(enrichedData, null, 2);
-        
-        navigator.clipboard.writeText(dataStr)
+        let formattedText = `TUS DATOS DE SALUD - ${formattedDate}\n\n`;
+        for (const [key, value] of Object.entries(result.savedFormData)) {
+          formattedText += `${key}: ${value}\n`;
+        }
+        formattedText += `\n`;
+        formattedText += `www.experienciaPaciente.org - Tu salud, fuera del círculo\n`;
+
+        navigator.clipboard.writeText(formattedText)
           .then(() => {
             const originalImg = copyBtn.querySelector('img').src;
             copyBtn.innerHTML = `<span class="panel__badge--success">Copiado</span>`;
@@ -281,19 +309,27 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-function generateQRCode(url) {
+function generateQRCode(data) {
   const qrcodeElement = document.getElementById('qrcode');
   if (qrcodeElement) {
     qrcodeElement.innerHTML = '';
     
     if (typeof QRCode === 'function') {
+      // Usar QRCode.js con mejor configuración
       new QRCode(qrcodeElement, {
-        text: url,
-        width: 150,
-        height: 150
+        text: data,
+        width: 200,
+        height: 200,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
       });
     } else {
-      console.error('QRCode library not loaded');
+      // Fallback mejorado con Google Charts
+      const img = document.createElement('img');
+      img.src = `https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=${encodeURIComponent(data)}&choe=UTF-8&chld=H|4`;
+      img.alt = 'Código QR';
+      qrcodeElement.appendChild(img);
     }
   }
 }
@@ -313,8 +349,7 @@ function updateDisplayedData(formData) {
     }
     
     const savedData = JSON.stringify(formData);
-    const url = 'https://chart.googleapis.com/chart?cht=qr&chs=120x120&chl=' + encodeURIComponent(savedData);
-    generateQRCode(url);
+    generateQRCode(savedData);
     
     const successMsg = document.getElementById('successMsg');
     if (successMsg) {
