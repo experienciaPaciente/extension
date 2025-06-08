@@ -316,11 +316,8 @@ document.addEventListener('DOMContentLoaded', () => {
         formData['Validado'] = 'Sí';
         
         chrome.storage.local.set({ 'savedFormData': formData }, () => {
-          setTimeout(() => {
-            alert('Datos profesionales adjuntados correctamente');
-            updateDisplayedData(formData);
-            generateQRCode(formData);
-          }, 100);
+          alert('Datos profesionales adjuntados correctamente');
+          updateDisplayedData(formData);
         });
       });
     });
@@ -334,6 +331,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     validationToggle.addEventListener('change', function() {
       professionalFields.style.display = this.checked ? 'block' : 'none';
+      attachButton.disabled = !this.checked;
+
     });
   }
 });
@@ -370,7 +369,6 @@ function generateQRCode(formData) {
   qrcodeElement.innerHTML = '';
   
   const qrText = formatDataText(formData);
-  console.log('Generating QR with text:', qrText);
   
   if (typeof QRCode === 'function') {
     try {
@@ -385,7 +383,6 @@ function generateQRCode(formData) {
         });
       }, 50);
     } catch (error) {
-      console.error('Error generating QR code:', error);
       fallbackQRGeneration(qrcodeElement, qrText);
     }
   } else {
@@ -394,6 +391,7 @@ function generateQRCode(formData) {
 }
 
 function updateDisplayedData(formData) {
+
   const output = document.getElementById('outputContainer');
   if (output) {
     output.innerHTML = '';
@@ -407,7 +405,6 @@ function updateDisplayedData(formData) {
       output.appendChild(paragraph);
     }
 
-    generateQRCode(formData);
     const successMsg = document.getElementById('successMsg');
     if (successMsg) {
       successMsg.style.display = 'flex';
