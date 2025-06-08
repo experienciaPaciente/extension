@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 document.addEventListener('DOMContentLoaded', () => {
   const boton = document.getElementById("resetData");
   const homeBtn = document.getElementById('navForm');
@@ -43,22 +43,58 @@ document.addEventListener('DOMContentLoaded', () => {
       clearInterval(countdownInterval);
     }
     
-    timeLeft = 60;
-    countdownElement.style.display = 'block';
-    updateCountdownDisplay();
     
-    countdownInterval = setInterval(() => {
-      timeLeft--;
+    chrome.storage.local.get(['timerStartTime', 'timerDuration'], (result) => {
+      const now = Date.now();
+      const startTime = result.timerStartTime;
+      const duration = result.timerDuration || 90;
+      
+      if (startTime) {
+        
+        const elapsed = Math.floor((now - startTime) / 1000);
+        timeLeft = Math.max(0, duration - elapsed);
+        
+        if (timeLeft <= 0) {
+          
+          chrome.storage.local.clear();
+          window.close();
+          return;
+        }
+      } else {
+        
+        timeLeft = 90;
+        chrome.storage.local.set({
+          timerStartTime: now,
+          timerDuration: 90
+        });
+      }
+      
+      countdownElement.style.display = 'block';
       updateCountdownDisplay();
       
-      if (timeLeft <= 0) {
-        if (countdownInterval) {
-          clearInterval(countdownInterval);
-        }        
-        chrome.storage.local.clear();
-        window.close();
-      }
-    }, 1000);
+      countdownInterval = setInterval(() => {
+        timeLeft--;
+        updateCountdownDisplay();
+        
+        if (timeLeft <= 0) {
+          if (countdownInterval) {
+            clearInterval(countdownInterval);
+          }        
+          chrome.storage.local.clear();
+          window.close();
+        }
+      }, 1000);
+    });
+  }
+  
+  function stopCountdown() {
+    if (countdownInterval) {
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+    }
+    
+    chrome.storage.local.remove(['timerStartTime', 'timerDuration']);
+    countdownElement.style.display = 'none';
   }
   
   function updateCountdownDisplay() {
@@ -89,7 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
         output.appendChild(paragraph);
       }
 
-      const savedData = JSON.stringify(formData);
+      const savedData = formData; 
       generateQRCode(savedData);
       
       if (successMsg) {
@@ -117,13 +153,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Event listeners
+  
+  chrome.storage.local.get(['timerStartTime', 'timerDuration'], (result) => {
+    if (result.timerStartTime && formElement && formElement.style.display === 'flex') {
+      startCountdown();
+    }
+  });
+
+  
   if (boton) {
     boton.addEventListener('click', () => {
-      if (countdownInterval) {
-        clearInterval(countdownInterval);
-        countdownElement.style.display = 'none';
-      }
+      stopCountdown();
       chrome.storage.local.clear();
       window.close();
     });
@@ -141,87 +181,86 @@ document.addEventListener('DOMContentLoaded', () => {
   
   if (exitBtn) {
     exitBtn.addEventListener('click', () => {
-      if (countdownInterval) {
-        clearInterval(countdownInterval);
-      }
+      stopCountdown();
       chrome.storage.local.clear();
       window.close();
     });    
   }
+  
   const downloadData = document.getElementById('downloadData');
-if (downloadData) {
-  downloadData.addEventListener('click', (e) => {
-    e.preventDefault();
-    
-    chrome.storage.local.get('savedFormData', (result) => {
-      if (!result.savedFormData) {
-        alert('No hay datos para descargar');
-        return;
-      }
-
-      const now = new Date();
-      const dateStr = now.toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, 19);
-      const filename = `Tus-Datos-de-Salud-${dateStr}.txt`;
+  if (downloadData) {
+    downloadData.addEventListener('click', (e) => {
+      e.preventDefault();
       
-      // Convert data to user-friendly format
-      const formatData = (data, level = 0) => {
-        const indent = '  '.repeat(level);
-        let output = '';
-        
-        if (typeof data === 'object' && data !== null) {
-          if (Array.isArray(data)) {
-            data.forEach((item, index) => {
-              output += `${indent}${index + 1}. ${formatData(item, level + 1)}\n`;
-            });
-          } else {
-            Object.entries(data).forEach(([key, value]) => {
-              const friendlyKey = key
-                .replace(/([A-Z])/g, ' $1')
-                .replace(/^./, str => str.toUpperCase())
-                .replace(/_/g, ' ');
-              
-              if (typeof value === 'object' && value !== null) {
-                output += `${indent}${friendlyKey}:\n`;
-                output += formatData(value, level + 1);
-              } else {
-                output += `${indent}${friendlyKey}: ${value || 'No especificado'}\n`;
-              }
-            });
-          }
-        } else {
-          output += `${data || 'No especificado'}`;
+      chrome.storage.local.get('savedFormData', (result) => {
+        if (!result.savedFormData) {
+          alert('No hay datos para descargar');
+          return;
         }
-        
-        return output;
-      };
-      
-      // Create readable content
-      let content = `TUS DATOS DE SALUD - ${now.toLocaleString('es-ES')}\n\n`;
-      content += `REGISTROS:\n`;
-      content += `${formatData(result.savedFormData)}\n\n`;
-      content += `www.experienciaPaciente.org - Tu salud, fuera del círculo\n`;
-      
-      const dataBlob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(dataBlob);
-      
-      downloadData.href = url;
-      downloadData.setAttribute('download', filename);
 
-      const tempLink = document.createElement('a');
-      tempLink.href = url;
-      tempLink.download = filename;
-      document.body.appendChild(tempLink);
-      tempLink.click();
-      document.body.removeChild(tempLink);
+        const now = new Date();
+        const dateStr = now.toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, 19);
+        const filename = `Tus-Datos-de-Salud-${dateStr}.txt`;
         
-      setTimeout(() => {
-        URL.revokeObjectURL(url);
-      }, 100);
+        
+        const formatData = (data, level = 0) => {
+          const indent = '  '.repeat(level);
+          let output = '';
+          
+          if (typeof data === 'object' && data !== null) {
+            if (Array.isArray(data)) {
+              data.forEach((item, index) => {
+                output += `${indent}${index + 1}. ${formatData(item, level + 1)}\n`;
+              });
+            } else {
+              Object.entries(data).forEach(([key, value]) => {
+                const friendlyKey = key
+                  .replace(/([A-Z])/g, ' $1')
+                  .replace(/^./, str => str.toUpperCase())
+                  .replace(/_/g, ' ');
+                
+                if (typeof value === 'object' && value !== null) {
+                  output += `${indent}${friendlyKey}:\n`;
+                  output += formatData(value, level + 1);
+                } else {
+                  output += `${indent}${friendlyKey}: ${value || 'No especificado'}\n`;
+                }
+              });
+            }
+          } else {
+            output += `${data || 'No especificado'}`;
+          }
+          
+          return output;
+        };
+        
+        
+        let content = `TUS DATOS DE SALUD - ${now.toLocaleString('es-ES')}\n\n`;
+        content += `REGISTROS:\n`;
+        content += `${formatData(result.savedFormData)}\n\n`;
+        content += `www.experienciaPaciente.org - Tu salud, fuera del círculo\n`;
+        
+        const dataBlob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(dataBlob);
+        
+        downloadData.href = url;
+        downloadData.setAttribute('download', filename);
+
+        const tempLink = document.createElement('a');
+        tempLink.href = url;
+        tempLink.download = filename;
+        document.body.appendChild(tempLink);
+        tempLink.click();
+        document.body.removeChild(tempLink);
+          
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+        }, 100);
+      });
     });
-  });
-}
-    
-const copyBtn = document.getElementById('copyData');
+  }
+      
+  const copyBtn = document.getElementById('copyData');
   if (copyBtn) {
     copyBtn.addEventListener('click', () => {
       chrome.storage.local.get('savedFormData', (result) => {
@@ -230,15 +269,7 @@ const copyBtn = document.getElementById('copyData');
           return;
         }
         
-        const now = new Date();
-        const formattedDate = now.toLocaleDateString('es-AR') + ' ' + now.toLocaleTimeString('es-AR');
-        
-        let formattedText = `TUS DATOS DE SALUD - ${formattedDate}\n\n`;
-        for (const [key, value] of Object.entries(result.savedFormData)) {
-          formattedText += `${key}: ${value}\n`;
-        }
-        formattedText += `\n`;
-        formattedText += `www.experienciaPaciente.org - Tu salud, fuera del círculo\n`;
+        const formattedText = formatDataText(result.savedFormData) + '\n'; 
 
         navigator.clipboard.writeText(formattedText)
           .then(() => {
@@ -255,10 +286,6 @@ const copyBtn = document.getElementById('copyData');
           });
       });
     });
-  }
-
-  if (formElement && formElement.style.display === 'flex') {
-    startCountdown();
   }
   
   const attachButton = document.getElementById('attachProfessionalData');
@@ -289,14 +316,16 @@ const copyBtn = document.getElementById('copyData');
         formData['Validado'] = 'Sí';
         
         chrome.storage.local.set({ 'savedFormData': formData }, () => {
-          alert('Datos profesionales adjuntados correctamente');
-          updateDisplayedData(formData);
+          setTimeout(() => {
+            alert('Datos profesionales adjuntados correctamente');
+            updateDisplayedData(formData);
+            generateQRCode(formData);
+          }, 100);
         });
       });
     });
   }
-  
-  // Validation toggle
+    
   const validationToggle = document.getElementById('validationToggle');
   const professionalFields = document.getElementById('professionalFields');
 
@@ -309,28 +338,58 @@ const copyBtn = document.getElementById('copyData');
   }
 });
 
-function generateQRCode(data) {
+function formatDataText(formData) {
+  const now = new Date();
+  const formattedDate = now.toLocaleDateString('es-AR') + ' ' + now.toLocaleTimeString('es-AR');
+  
+  let formattedText = `TUS DATOS DE SALUD - ${formattedDate}\n\n`;
+  for (const [key, value] of Object.entries(formData)) {
+    formattedText += `${key}: ${value}\n`;
+  }
+  formattedText += `\nwww.experienciaPaciente.org - Tu salud, fuera del círculo`;
+  
+  return formattedText;
+}
+
+function fallbackQRGeneration(qrcodeElement, qrText) {
+  const img = document.createElement('img');
+  img.src = `https://chart.googleapis.com/chart?cht=qr&chs=160x160&chl=${encodeURIComponent(qrText)}&choe=UTF-8&chld=H|4`;
+  img.alt = 'Código QR';
+  img.style.maxWidth = '160px';
+  img.style.maxHeight = '160px';
+  img.onerror = () => {
+    qrcodeElement.innerHTML = '<p>Error generando código QR</p>';
+  };
+  
+  qrcodeElement.appendChild(img);
+}
+
+function generateQRCode(formData) {
   const qrcodeElement = document.getElementById('qrcode');
-  if (qrcodeElement) {
-    qrcodeElement.innerHTML = '';
-    
-    if (typeof QRCode === 'function') {
-      // Usar QRCode.js con mejor configuración
-      new QRCode(qrcodeElement, {
-        text: data,
-        width: 200,
-        height: 200,
-        colorDark: "#000000",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.H
-      });
-    } else {
-      // Fallback mejorado con Google Charts
-      const img = document.createElement('img');
-      img.src = `https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=${encodeURIComponent(data)}&choe=UTF-8&chld=H|4`;
-      img.alt = 'Código QR';
-      qrcodeElement.appendChild(img);
+  if (!qrcodeElement) return;
+  qrcodeElement.innerHTML = '';
+  
+  const qrText = formatDataText(formData);
+  console.log('Generating QR with text:', qrText);
+  
+  if (typeof QRCode === 'function') {
+    try {
+      setTimeout(() => {
+        new QRCode(qrcodeElement, {
+          text: qrText,
+          width: 160,
+          height: 160,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.H
+        });
+      }, 50);
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      fallbackQRGeneration(qrcodeElement, qrText);
     }
+  } else {
+    fallbackQRGeneration(qrcodeElement, qrText);
   }
 }
 
@@ -347,10 +406,8 @@ function updateDisplayedData(formData) {
       output.appendChild(label);
       output.appendChild(paragraph);
     }
-    
-    const savedData = JSON.stringify(formData);
-    generateQRCode(savedData);
-    
+
+    generateQRCode(formData);
     const successMsg = document.getElementById('successMsg');
     if (successMsg) {
       successMsg.style.display = 'flex';
